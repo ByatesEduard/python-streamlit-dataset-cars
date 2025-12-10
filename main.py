@@ -10,6 +10,14 @@ st.title("🚗 Автомобілі по компаніях – Інтеракт
 st.markdown("""
 **Ласкаво просимо на дашборд автомобілів!**  
 Тут ви можете детально проаналізувати автомобілі різних компаній на основі широкого набору даних 2025 року.
+            
+### 👇 Мета дашборду: Надати інтуїтивно зрозумілий інтерфейс для порівняння автомобілів. Візуалізувати ключові характеристики авто: ціни, двигуни, потужність, рейтинг. Сформувати аналітичну картину по компаніях та їх моделях.
+            
+### 👇 Дані, що включені: **Назви автомобілів**,  **Ціни та категорії цін**,  **Тип двигуна та потужність (HorsePower)**, **Рейтинг авто на основі характеристик двигуна**  
+
+Дашборд реалізовано за допомогою **Streamlit** та **Plotly**.
+
+> Автор: Бібікова Анастасія Олександрівна
 """)
 
 # --- Зчитування даних ---
@@ -61,23 +69,25 @@ def extract_hp_first(hp_str):
 
 df['HP Powers'] = df['HorsePower'].map(extract_hp_first)
 
-# --- Топ моделі ---
-idx = df.groupby('Company Names')['HP Powers'].idxmax()
-top_models = df.loc[idx, ['Company Names', 'Cars Names', 'HorsePower', 'HP Powers']].sort_values(by='HP Powers', ascending=False).reset_index(drop=True)
 
-# --- Перший рядок ---
+idx = df.groupby('Company Names')['HP Powers'].idxmax()
+top_models = df.loc[idx, ['Company Names', 'Cars Names', 'HorsePower', 'HP Powers']]
+top_models = top_models.sort_values(by='HP Powers', ascending=False).reset_index(drop=True)
+
+
 st.subheader("Топ моделей по HorsePower та їх потужність")
 col1, col2 = st.columns([1,1.2])
 with col1:
     st.dataframe(top_models[['Company Names', 'Cars Names', 'HorsePower', 'HP Powers']], height=500)
 with col2:
-    top_models['Company_Car'] = top_models['Company Names'] + " - " + top_models['Cars Names']
-    fig = px.pie(top_models, names='Company_Car', values='HP Powers', 
+    top_models_for_chart = top_models.copy()
+    top_models_for_chart['Company_Car'] = top_models_for_chart['Company Names'] + " - " + top_models_for_chart['Cars Names']
+    fig = px.pie(top_models_for_chart, names='Company_Car', values='HP Powers',
                  title="Розподіл потужності топ-моделей авто", width=700, height=700)
     fig.update_traces(textposition='inside', textinfo='percent+label')
     st.plotly_chart(fig, use_container_width=True)
 
-# --- Другий рядок: компанія та її авто ---
+
 st.subheader("Вибір компанії та її автомобілів")
 col3, col4 = st.columns([1,1])
 with col3:
@@ -91,7 +101,7 @@ with col4:
     fig2.update_traces(textposition='inside', textinfo='percent+label')
     st.plotly_chart(fig2, use_container_width=True)
 
-# --- Третій рядок: пальне ---
+
 st.subheader("Ціни на пальне та їх розподіл")
 fuel.columns = fuel.columns.str.strip()
 if len(fuel.columns) == 1:
@@ -105,22 +115,27 @@ with col5:
     price = fuel.loc[fuel['operator'] == operator_choice, fuel_type_choice].values[0]
     st.write(f"Ціна на {fuel_type_choice} на {operator_choice}: {price} грн/л")
 with col6:
-    fig3 = px.pie(fuel, names='operator', values='diesel', 
-                  title="Розподіл цін Diesel по операторах", width=700, height=700)
+    fig3 = px.pie(fuel, names='operator', values='diesel', title="Розподіл цін Diesel по операторах",
+                  width=700, height=700)
     fig3.update_traces(textposition='inside', textinfo='percent+label')
     st.plotly_chart(fig3, use_container_width=True)
 
-# --- Четвертий рядок: інші графіки ---
 st.subheader("Інші статистики")
 col7, col8, col9 = st.columns([1,1,1])
+
 with col7:
+    st.subheader("**Кількість авто по компаніях**")
     st.bar_chart(df['Company Names'].value_counts(), height=350)
+
 with col8:
+    st.subheader("**Кількість авто по категоріях цін**")
     st.bar_chart(df['Price Category'].value_counts().sort_index(), height=350)
+
 with col9:
+    st.subheader("**Топ 10 авто за рейтингом**")
     st.bar_chart(df.groupby('Cars Names')['score'].mean().sort_values(ascending=False).head(10), height=350)
 
-# --- Об'єднані дані ---
+
 merged = pd.concat([df, fuel], axis=1)
 st.subheader("Об'єднані дані авто та цін на пальне")
 st.dataframe(merged.head(50), height=400)
