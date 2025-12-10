@@ -6,6 +6,8 @@ import plotly.express as px
 st.title("🚗 Автомобілі по компаніях – Інтерактивний дашборд")
 
 st.markdown("""
+            
+            
 **Ласкаво просимо на дашборд автомобілів!**  
 Тут ви можете детально проаналізувати автомобілі різних компаній на основі широкого набору даних 2025 року.
 
@@ -28,6 +30,7 @@ st.markdown("""
 
 
 df = pd.read_csv("Cars Datasets 2025.csv", encoding='cp1251')
+fuel = pd.read_csv("fuel_dataset.csv", encoding='cp1251', sep=",")
 df.columns = df.columns.str.strip()
 df['Company Names'] = df['Company Names'].str.strip()
 
@@ -79,7 +82,7 @@ def extract_hp_first(hp_str):
     if match:
         return int(match.group())
     return None
-
+    
 
 df['HP Powers'] = df['HorsePower'].map(extract_hp_first)
 idx = df.groupby('Company Names')['HP Powers'].idxmax()
@@ -122,3 +125,29 @@ st.bar_chart(df['Price Category'].value_counts().sort_index())
 
 st.subheader("Рейтинг авто по оцінкам")
 st.bar_chart(df.groupby('Cars Names')['score'].mean().sort_values(ascending=False).head(10))
+
+st.markdown(
+    """
+    Інтерактивна функція Streamlit для перегляду цін на пальне.
+    fuel_df — DataFrame з колонками: operator, A95_plus, A95, A92, diesel, gas, electric
+    """)
+
+def show_fuel_prices(fuel_df):
+    fuel_df.columns = fuel_df.columns.str.strip()
+
+
+    if len(fuel_df.columns) == 1:
+        fuel_df = fuel_df.iloc[:,0].str.split(",", expand=True)
+        fuel_df.columns = ["operator","A95_plus","A95","A92","diesel","gas","electric"]
+
+    operator_choice = st.selectbox("Оберіть оператора", fuel_df['operator'])
+    fuel_type_choice = st.selectbox("Оберіть тип пального", fuel_df.columns[1:])
+
+    price = fuel_df.loc[fuel_df['operator'] == operator_choice, fuel_type_choice].values[0]
+    st.write(f"Ціна на {fuel_type_choice} на {operator_choice}: {price} грн/л")
+
+show_fuel_prices(fuel)
+
+merged = pd.concat([df, fuel], axis=1)
+
+merged
