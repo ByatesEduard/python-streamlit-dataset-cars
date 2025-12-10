@@ -74,6 +74,40 @@ idx = df.groupby('Company Names')['HP Powers'].idxmax()
 top_models = df.loc[idx, ['Company Names', 'Cars Names', 'HorsePower', 'HP Powers']]
 top_models = top_models.sort_values(by='HP Powers', ascending=False).reset_index(drop=True)
 
+st.subheader("Інтерактивний перегляд авто за оцінкою")
+
+
+unique_scores = sorted(df['score'].unique())
+
+
+selected_score = st.selectbox("Оберіть оцінку авто", unique_scores)
+
+
+filtered_cars = df[df['score'] == selected_score]
+
+
+st.markdown(f"**Автомобілі з оцінкою {selected_score}:**")
+st.dataframe(filtered_cars[['Company Names', 'Cars Names', 'HorsePower', 'Price Category', 'score']], height=400)
+
+
+st.markdown(f"**Кількість авто по компаніях з оцінкою {selected_score}:**")
+col1, col2 = st.columns(2)
+
+with col1:
+    st.bar_chart(filtered_cars['Company Names'].value_counts(), height=350)
+
+with col2:
+    
+    fig_score = px.pie(
+        filtered_cars,
+        names='Company Names',
+        title=f"Розподіл авто за компаніями (оцінка {selected_score})",
+        width=500,
+        height=500
+    )
+    fig_score.update_traces(textposition='inside', textinfo='percent+label')
+    st.plotly_chart(fig_score, use_container_width=True)
+
 
 st.subheader("Топ моделей по HorsePower та їх потужність")
 col1, col2 = st.columns([1,1.2])
